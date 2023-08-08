@@ -1,0 +1,442 @@
+{% extends "emailreport/layout.html" %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+
+    .form-container {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    select,
+    button {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+
+    button {
+        background-color: #4CAF50;
+        color: #fff;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    button:disabled {
+        background-color: #ddd;
+        cursor: not-allowed;
+    }
+
+    h2 {
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+
+    p {
+        margin: 5px 0;
+    }
+
+    /* Responsive layout */
+    @media screen and (max-width: 600px) {
+        .form-container {
+            max-width: 100%;
+            padding: 10px;
+        }
+    }
+    .data-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-top: 40px;
+    }
+
+    #product-table,
+    #product-details {
+        flex: 1 0 45%; /* Adjust the width as needed */
+        margin-bottom: 20px;
+    }
+
+    /* Adjust the max-width and margin as needed */
+    .chart-container {
+        max-width: 600px;
+        margin: 0 40px;
+        margin-bottom: 20px;
+    }
+    #product-details-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    #product-details-table th,
+    #product-details-table td {
+        border: 1px solid #ccc;
+        padding: 8px;
+    }
+
+    /* Optional: Center the text in table cells */
+    #product-details-table th {
+        text-align: center;
+    }
+
+    #product-details-table td {
+        text-align: center;
+    }
+    .chart-and-table-container {
+        display: flex;
+        justify-content: space-between;
+    }
+    /* .report-type-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    } */
+</style>
+{% endblock %}
+
+{% block body %}
+<div style="display:flex;background-color: rgb(101, 137, 137);">
+    <div class="form-container" style="background-color:rgb(57, 83, 114);color:#fff;font-family:Roboto;min-height:50%;margin-bottom:30px;border-radius:10px">
+        <form action="{% url 'dashboard' %}" method="post">
+            {% csrf_token %}
+            <label for="entity-select">Select Entity:</label>
+            <select id="entity-select" name="entity">
+                <option value="">--Select Entity--</option>
+                {% for entity in entities %}
+                    <option value="{{ entity.id }}">{{ entity.entity_name }}</option>
+                {% endfor %}
+            </select>
+    
+            <label for="location-select">Select Location:</label>
+            <select id="location-select" name="location" multiple disabled>
+                <option value="">--Select Location--</option>
+            </select>
+    
+            <div class="report-type-container">
+                <label for="report-type">Select Report Type:</label>
+                <select id="report-type" name="report_type">
+                    <option value="">--Select Report Type--</option>
+                    <option value="daily">Daily Report</option>
+                    <option value="weekly">Weekly Report</option>
+                </select>
+            </div>
+    
+    
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate" name="start_date">
+          
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate" name="end_date">
+            <label for="product-select">Select Product:</label>
+            <select id="product-select" name="product" multiple disabled>
+                <option value="">--Select Product--</option>
+            </select>
+            <button type="submit" id="submit-btn" disabled>Check Product Details</button>
+        </form>
+    </div>
+    
+    <div class="form-container" style="background-color: rgb(57, 83, 114);color:#fff;font-family:Roboto;min-height:50%;margin-bottom:30px;border-radius:10px;">
+        <h3 style="color:#fff;font-family:Roboto">If you want to receive an email, then select here:</h3>
+        <form action="{% url 'email' %}"  method="post">
+            {% csrf_token %}
+            <label for="a">daily</label>
+            <input type="checkbox" id="a" name="report_type" value="daily">
+            <label for="b">weekly</label>
+            <input type="checkbox" id="b" name="report_type" value="weekly">
+            <label for="c">daterange</label>
+            <input type="checkbox" id="c" name="report_type" value="daterange">
+    
+            <div id="date-fields" style="display: none;">
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date" name="start_date">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date" name="end_date">
+            </div>
+            <br><br>
+            <button type="submit" class="btn-btn primary">submit</button>
+        </form>
+    </div>
+</div>
+
+
+
+
+
+<div class="data-container">
+    <div class="chart-and-table-container">
+        <div id="product-details" class="chart-container">
+            <h2>Product Details</h2>
+            <canvas id="product-chart"></canvas>
+        </div>
+        <div id="product-table" class="chart-container">
+            <h2>Product Table</h2>
+            <table id="product-details-table">
+                <tr>
+                    <th>Product</th>
+                    <th>Generated</th>
+                    <th>Commissioned</th>
+                    <th>Packed</th>
+                    <th>Shipped</th>
+                </tr>
+                <!-- Add table rows dynamically using JavaScript (this will be populated later) -->
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const entitySelect = document.getElementById('entity-select');
+    const locationSelect = document.getElementById('location-select');
+    const productSelect = document.getElementById('product-select');
+    const productDetails = document.getElementById('product-details');
+    const submitBtn = document.getElementById('submit-btn');
+
+    // Function to fetch locations based on selected entity
+    const fetchLocations = () => {
+        const entityId = entitySelect.value;
+        if (entityId) {
+            fetch(`/get_entity_locations/${entityId}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    locationSelect.innerHTML = '<option value="">--Select Location--</option>';
+                    data.forEach((location) => {
+                        const option = document.createElement('option');
+                        option.value = location;
+                        option.textContent = location;
+                        locationSelect.appendChild(option);
+                    });
+                    locationSelect.disabled = false;
+                    locationSelect.removeAttribute('disabled');
+                });
+        } else {
+            locationSelect.innerHTML = '<option value="">--Select Location--</option>';
+            locationSelect.disabled = true;
+            locationSelect.setAttribute('disabled', 'disabled');
+            productSelect.innerHTML = '<option value="">--Select Product--</option>';
+            productSelect.disabled = true;
+            productSelect.setAttribute('disabled', 'disabled');
+            submitBtn.disabled = true;
+            productDetails.style.display = 'none';
+        }
+    };
+
+    // Function to fetch products based on selected entity and location
+    const fetchProducts = () => {
+        const entityId = entitySelect.value;
+        const location = locationSelect.value;
+        if (entityId && location) {
+            fetch(`/get_entity_location_products/${entityId}/${location}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    productSelect.innerHTML = '<option value="">--Select Product--</option>';
+                    data.forEach((product) => {
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.textContent = product.product_name;
+                        productSelect.appendChild(option);
+                    });
+                    productSelect.disabled = false;
+                    productSelect.removeAttribute('disabled');
+                });
+        } else {
+            productSelect.innerHTML = '<option value="">--Select Product--</option>';
+            productSelect.disabled = true;
+            productSelect.setAttribute('disabled', 'disabled');
+            submitBtn.disabled = true;
+            productDetails.style.display = 'none';
+        }
+    };
+
+    // Function to fetch product details based on selected products
+    let productChart = null;
+    const createProductChart = (productsData) => {
+    const ctx = document.getElementById('product-chart').getContext('2d');
+
+    // Hide the product-details element if data is empty or null
+    if (!productsData || productsData.length === 0) {
+        productDetails.style.display = 'none';
+        if (productChart) {
+            productChart.destroy();
+        }
+        return;
+    }
+
+    productDetails.style.display = 'block';
+    if (productChart) {
+        productChart.destroy();
+    }
+
+    const labels = ['Total Serials', 'Serials Commissioned', 'Serials Decommissioned', 'Serials Packed', 'Serials Shipped'];
+
+    // Generate unique colors using HSL color model
+    const datasets = productsData.map((productData, index) => {
+        const hue = (index * (360 / productsData.length)) % 360;
+        const backgroundColor = `hsla(${hue}, 70%, 50%, 0.6)`;
+        const borderColor = `hsl(${hue}, 70%, 50%)`;
+
+        return {
+            label: `Product ${index + 1}`,
+            data: [
+                productData.total_serials,
+                productData.serials_commissioned,
+                productData.serials_decommissioned,
+                productData.serials_packed,
+                productData.serials_shipped
+            ],
+            backgroundColor: backgroundColor,
+            borderColor: borderColor,
+            borderWidth: 1
+        };
+    });
+
+    productChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+};
+
+    const reportTypeSelect = document.getElementById('report-type');
+    const fetchProductDetails = () => {
+        const selectedProducts = Array.from(productSelect.selectedOptions).map((option) => option.value);
+        const reportType = reportTypeSelect.value;
+        if (reportType === 'daily') {
+        // If daily report is selected, set startDate and endDate to the current date
+            const currentDate = new Date();
+            startDate = currentDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+            endDate = startDate;
+        }
+        else if (reportType === 'weekly') {
+        // If weekly report is selected, set startDate to current date - 7 days and endDate to the current date
+            const currentDate = new Date();
+            const sevenDaysAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000); // Subtract 7 days in milliseconds
+            startDate = sevenDaysAgo.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+            endDate = currentDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        }
+        else{
+            startDate = document.getElementById('startDate').value;
+            endDate = document.getElementById('endDate').value;
+        }
+
+        if (selectedProducts.length > 0) {
+            Promise.all(selectedProducts.map((productId) => {
+                return fetch(`/get_product_details/${productId}/?start_date=${startDate}&end_date=${endDate}`)
+                    .then((response) => response.json());
+            }))
+            .then((productDetailsList) => {
+                productDetails.style.display = 'block';
+                createProductChart(productDetailsList);
+                populateProductTable(productDetailsList, startDate, endDate);
+            })
+            .catch((error) => {
+                console.error('Error fetching product details:', error);
+                productDetails.style.display = 'none';
+            });
+        } else {
+            productDetails.style.display = 'none';
+        }
+        
+    };
+
+    const populateProductTable = (productDetailsList, startDate, endDate) => {
+        const tableBody = document.getElementById('product-details-table');
+        tableBody.innerHTML = ''; // Clear previous table data
+        const tableHeadersRow = document.createElement('tr');
+        ['Product', 'Generated', 'Commissioned', 'Packed', 'Shipped'].forEach((headerText) => {
+            const headerCell = document.createElement('th');
+            headerCell.textContent = headerText;
+            tableHeadersRow.appendChild(headerCell);
+        });
+    tableBody.appendChild(tableHeadersRow);
+
+        productDetailsList.forEach((productData) => {
+            const row = document.createElement('tr');
+
+            const productNameCell = document.createElement('td');
+            productNameCell.textContent = productData.product_name;
+            row.appendChild(productNameCell);
+
+            ['generated', 'commissioned', 'packed', 'shipped'].forEach((category) => {
+                const categoryCell = document.createElement('td');
+                const categoryLink = document.createElement('a');
+                categoryLink.href = `/serials_by_category/${productData.product_id}/${category}/?start_date=${startDate}&end_date=${endDate}`;
+                categoryLink.textContent = 'View Serials';
+                categoryCell.appendChild(categoryLink);
+                row.appendChild(categoryCell);
+            });
+
+            tableBody.appendChild(row);
+        });
+    };
+    const checkDateValidity = () => {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        submitBtn.disabled = !(startDate && endDate);
+    };
+    function toggleDateFields() {
+        const dateFieldsDiv = document.getElementById('date-fields');
+        const daterangeCheckbox = document.getElementById('c');
+        dateFieldsDiv.style.display = daterangeCheckbox.checked ? 'block' : 'none';
+    }
+
+    // Event listener for checkbox change
+    document.getElementById('c').addEventListener('change', toggleDateFields);
+
+    // Event listeners
+    entitySelect.addEventListener('input', () => {
+        fetchLocations();
+    });
+
+    locationSelect.addEventListener('input', () => {
+        fetchProducts();
+    });
+
+  
+
+  // Event listeners for date range selection
+  document.getElementById('startDate').addEventListener('input', checkDateValidity);
+  document.getElementById('endDate').addEventListener('input', checkDateValidity);
+
+    productSelect.addEventListener('input', () => {
+        submitBtn.disabled = false;
+    });
+
+    // const form = document.querySelector('form');
+    // form.addEventListener('submit', (event) => {
+    //     submitBtn.disabled = false;
+    //     event.preventDefault();
+    //     fetchProductDetails();
+    // });
+
+    submitBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        fetchProductDetails();
+    });
+
+</script>
+{% endblock %}

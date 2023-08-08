@@ -1,0 +1,18 @@
+{% extends 'emailreport/layout.html' %}
+{% block body %}
+<h2>create product:</h2>
+<form action="{% url 'product' pk=entity.pk %}" method="post">
+    {% csrf_token %}
+    <label for="a">product_name:</label>
+    <input type="text" name="product_name" id="a">
+    <br><br>
+    <label for="b">select the duration:</label>
+    <select name="email_duration" id="b">
+        <option value="1-day">1 day</option>
+        <option value="1-month">1 month</option>
+    </select>
+    <br><br>
+    <button type="submit" class="btn btn-primary">create</button>
+</form>
+<a href="{% url 'batch' pk=entity.pk %}">create a batch</a>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'emailreport/layout.html' %}
+
+{% block head %}
+    <style>
+        .collapsible {
+            cursor: pointer;
+            padding: 18px;
+            border: none;
+            text-align: left;
+            outline: none;
+            background-color: #f2f2f2;
+            font-size: 15px;
+        }
+
+        .active {
+            background-color: #ccc;
+        }
+
+        .content {
+            display: none;
+            overflow: hidden;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <!-- Table of Contents -->
+    <ul>
+        {% for entity in entities %}
+            <li>
+                <a href="#entity_{{ entity.id }}" class="table-of-contents-link">{{ entity.entity_name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Entities and Products -->
+    {% for entity in entities %}
+        <!-- Entity Section -->
+        <h2 id="entity_{{ entity.id }}">{{ entity.entity_name }}</h2>
+        <ul>
+            {% for product in products %}
+                {% if product.linked_entity == entity %}
+                    <li><strong>{{ product.product_name }}</strong></li>
+                    <div>
+                        <table>
+                            <tr>
+                                <td>Total Serials</td>
+                                <td>{{ product.totalserials }}</td>
+                            </tr>
+                            <tr>
+                                <td>Serials Commissioned</td>
+                                <td>{{ product.serialscommissioned }}</td>
+                            </tr>
+                            <tr>
+                                <td>Serials Decommissioned</td>
+                                <td>{{ product.serialsdecommissioned }}</td>
+                            </tr>
+                            <tr>
+                                <td>Serials Packed</td>
+                                <td>{{ product.serialspacked }}</td>
+                            </tr>
+                            <tr>
+                                <td>Serials Shipped</td>
+                                <td>{{ product.serialsshipped }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endfor %}
+
+    <script>
+        const coll = document.getElementsByClassName('collapsible');
+        for (let i = 0; i < coll.length; i++) {
+            coll[i].addEventListener('click', function () {
+                this.classList.toggle('active');
+                const content = this.nextElementSibling;
+                if (content.style.display === 'block') {
+                    content.style.display = 'none';
+                } else {
+                    content.style.display = 'block';
+                }
+            });
+        }
+    </script>
+{% endblock %}
+

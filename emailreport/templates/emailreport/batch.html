@@ -1,0 +1,22 @@
+{% extends 'emailreport/layout.html' %}
+{% block body %}
+<h2>create batch:</h2>
+<form action="{% url 'batch' pk=entity.pk %}" method="post">
+    {% csrf_token %}
+    <br>
+    <label for="a">Batch Name:</label>
+    <input type="text" name="batch_name" id="a">
+    <br><br>
+    <label for="b">Choose a product:</label>
+    <select id="b" name="product_name">
+        {% for product in products %}
+                <option value="{{product.product_name}}">{{product.product_name}}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+    <label for="b">Quantity:</label>
+    <input type="text" name="Quantity">
+    <br><br>
+    <button type="submit">Create</button>
+</form>
+{% endblock %}

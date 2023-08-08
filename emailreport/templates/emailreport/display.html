@@ -1,0 +1,9 @@
+{% extends 'emailreport/layout.html' %}
+{% block body %}
+    <h1>{{category}} Serial Numbers for - Product {{ product_name }}</h1>
+    <ul>
+        {% for serial_number in serial_numbers %}
+            <li>{{ serial_number }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

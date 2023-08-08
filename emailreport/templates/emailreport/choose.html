@@ -1,0 +1,15 @@
+{% extends 'emailreport/layout.html' %}
+{% block body %}
+<form action="{% url 'choose' %}" method="post">
+    {% csrf_token %}
+    <br>
+    <label for="b">Choose a entity:</label>
+    <select id="b" name="entity_value">
+        {% for entity in entities %}
+                <option value="{{entity.entity_name}}">{{entity.entity_name}}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+    <button type="submit" class="btn btn-primary">continue:</button>
+</form>
+{% endblock %}

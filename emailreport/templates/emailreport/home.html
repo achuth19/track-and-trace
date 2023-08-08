@@ -1,0 +1,23 @@
+{% extends 'emailreport/layout.html' %}
+
+{% block body %}
+<h2>Register an entity</h2>
+<form action="{% url 'entities' %}" method="post">
+    {% csrf_token %}
+    <label for="a">entity:</label>
+    <input type="text" name="entity" id="a" class="form-control">
+    <br>
+    <label for="b">location:</label>
+    <input type="text" name="location" id="b" class="form-control">
+    <br>
+    <label for="c">role:</label>
+    <input type="text" name="role" id="c" class="form-control">
+    <br>
+    <button type="submit" class="btn btn-primary">create</button>
+</form>
+<button type="button" class="btn btn-primary"><a href="{% url 'dashboard' %}" style="color:brown">click here to view dashboard:</a></button>
+<button type="button" class="btn btn-primary"><a href="{% url 'choose' %}" style="color:brown">choose an entity:</a></button>
+
+<br><br>
+<button type="button" class="btn btn-primary"><a href="{% url 'logout' %}" style="color:red">logout</a></button>
+{% endblock %}
